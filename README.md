@@ -1,10 +1,10 @@
 # Manga Rosa Memory Game
 Seja bem-vinda(o) ao nosso processo seletivo para trainee da Manga Rosa. Como vocês sabem, nós somos uma das maiores plataformas de entregas do norte e nordeste do país. 
-A nossa missão é entregar qualquer coisa, a qualquer hora e em qualquer lugar. Neste ano, os nossos processos seletivos serão coordenados por nossa parceira Jambo edu. O nosso principal objetivo durante esses próximos meses é avaliar os seus conhecimentos sobre estrutura de dados e desenvolvimento de sistemas utilizando a lingugaem de programação Java. 
+A nossa missão é entregar qualquer coisa, a qualquer hora e em qualquer lugar. Neste ano, os nossos processos seletivos serão coordenados por nossa parceira Jambo edu. O nosso principal objetivo durante esses próximos meses é avaliar os seus conhecimentos sobre estrutura de dados e desenvolvimento de sistemas utilizando a linguagem de programação Kotlin. 
 
-Nós acreditamos que o bem-estar das pessoas potencializa o engajamento delas nas metas e objetivos da empresa. Por isso, todas as sextas-feiras durante a tarde, a empresa dedica um momento de descompressão e interação nas equipes. Nós chamamos esse período de “Momento deploy”. Nesse desafio queremos que vocês desenvolvam um jogo da memória. 
+Nós acreditamos que o bem-estar das pessoas potencializa o engajamento delas nas metas e objetivos da empresa. Por isso, todas as sextas-feiras durante a tarde, a empresa dedica um momento de descontração e interação nas equipes. Nós chamamos esse período de “Momento deploy”. Nesse desafio queremos que vocês desenvolvam um jogo da memória. 
 
-O jogo da memória clássico é basicamente um jogo de cartas que tem o objetivo principal exercitar a memória dos jogadores. Neste jogo, todas as cartas possuem figuras apenas em um dos lados. A mesma figura se repete em duas cartas diferentes. De início, as cartas são colocadas com as figuras para baixo e depois embaralhadas. Em cada rodada, cada participante pode virar duas cartas e, se forem iguais, recolhe o par e joga novamente. Contudo, se forem diferentes, a(o) participante deve virar as cartas e devolvê-las para o jogo, passando a vez para a(o) outra(o) participante. Fácil não? Mas você não acha que vamos deixar algo tão fácil assim, né? Vamos para algumas regrinhas do nosso Manga’s Memory Game: 
+O jogo da memória clássico é basicamente um jogo de cartas que tem o objetivo principal de exercitar a memória dos jogadores. Neste jogo, todas as cartas possuem figuras apenas em um dos lados. A mesma figura se repete em duas cartas diferentes. De início, as cartas são colocadas com as figuras para baixo e depois embaralhadas. Em cada rodada, cada participante pode virar duas cartas e, se forem iguais, recolhe o par e joga novamente. Contudo, se forem diferentes, a(o) participante deve virar as cartas e devolvê-las para o jogo, passando a vez para a(o) outra(o) participante. Fácil não? Mas você não acha que vamos deixar algo tão fácil assim, né? Vamos para algumas regrinhas do nosso Manga’s Memory Game: 
 
 1.	No início do jogo, a(o) participante deve escolher o tamanho do tabuleiro: 4x4, 6x6, 8x8 ou 10x10. 
 2.	Todos os pares de figuras possuem uma cor de fundo: vermelho, azul, amarelo ou preto. 
@@ -38,5 +38,8 @@ Vamos exemplificar essas regras iniciais para vocês. Um exemplo sempre é uma b
 
 
 **Team members:**
-1. *Nome do membro* - *e-mail*
-2. *Nome do membro* - *e-mail*
+1. *Denilson Santos* - *denilsonsant.aluno@gmail.com*
+2. *Luan Vinícius* - *luanvnms2512@gmail.com*
+3. *Kailla Costa* - *kaillacsouza@gmail.com*
+4. *Rafael Pinto* - *rafael.pinto19300@gmail.com*
+
