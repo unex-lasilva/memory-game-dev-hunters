@@ -26,8 +26,10 @@ const val POSITION_ERROR_MESSAGE = "Posição da carta inválida."
 const val FACEUP_RETRY_MESSAGE = "Por favor, escolha outra posição!"
 const val POSITION_RETRY_MESSAGE = "Por favor, insira uma posição válida!"
 
+typealias CardsCollection = MutableList<Card>
 typealias ColorString = String
 typealias LineOfCards = List<Card>
+typealias PlayersMap = Map<ColorString, Player>
 
 fun main(){
     // Váriavel para armazenar informações dos jogadores

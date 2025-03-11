@@ -48,8 +48,8 @@ class CardBoard(val lines: Int, val columns: Int) {
     // Métodos para a configuração do tabuleiro
 
     init {
-        val uniqueCardsPerColor = getUniqueCardsPerColor()
-        val cardsForTheBoard = generateAllCards(uniqueCardsPerColor)
+        val numberOfUniqueCardsPerColor = getNumberOfUniqueCardsPerColor()
+        val cardsForTheBoard = generateCards(numberOfUniqueCardsPerColor)
         repeat (lines) {
             val cardsOnLine = mutableListOf<Card>()
             repeat (columns) {
@@ -60,61 +60,159 @@ class CardBoard(val lines: Int, val columns: Int) {
         }
     }
 
-    private fun getUniqueCardsPerColor(): Map<ColorString, Int> {
+    private fun getNumberOfUniqueCardsPerColor(): Map<ColorString, Int> {
         val numberOfUniqueCards = ((this.lines * this.columns) / NUMBER_OF_COPIES_PER_CARD).toInt()
         val numberOfCardsPerColor = mutableMapOf(
             "red" to (numberOfUniqueCards * RED_CARDS_AMOUNT_PCT).toInt(),
             "blue" to (numberOfUniqueCards * BLUE_CARDS_AMOUNT_PCT).toInt(),
             "black" to NUMBER_OF_BLACK_CARDS
         )
-        numberOfCardsPerColor["yellow"] = numberOfUniqueCards -
-                (numberOfCardsPerColor.values.reduce { cont, cardsNumber -> cont + cardsNumber })
+        val numberOfCardsWithColorNow = numberOfCardsPerColor.values
+            .reduce { totalNumber, cardsNumberForColor -> cardsNumberForColor + totalNumber }
+        val numberOfCardsWithNoColorNow = numberOfUniqueCards - numberOfCardsWithColorNow
+        val numberOfYellowCards = if (numberOfCardsWithNoColorNow < 0) 0 else numberOfCardsWithNoColorNow
+        numberOfCardsPerColor["yellow"] = numberOfYellowCards
         return numberOfCardsPerColor
     }
 
-    private fun generateAllCards(numberOfCardsPerColor: Map<ColorString, Int>): MutableList<Card> {
-        val allCards = mutableListOf<Card>()
-        numberOfCardsPerColor.forEach {
-            val code = ('A'..'Z').random() + Random.nextInt(0, 9).toString()
+    private fun generateCards(numberOfUniqueCardsPerColor: Map<ColorString, Int>): CardsCollection {
+        val cards = mutableListOf<Card>()
+        numberOfUniqueCardsPerColor.forEach {
             val color = it.key
-            val numberOfCards = it.value
-            repeat (numberOfCards) {
-                val card = Card(code, color, isFaceUp = false)
-                repeat (NUMBER_OF_COPIES_PER_CARD) { allCards.add(card) }
+            val numberOfUniqueCards = it.value
+            val codes = getUniqueCodesForCards(numberOfUniqueCards)
+            codes.forEach {
+                val code = it
+                repeat (NUMBER_OF_COPIES_PER_CARD) {
+                    val card = Card(code, color)
+                    cards.add(card) }
             }
         }
-        repeat (NUMBER_OF_COPIES_PER_CARD) { allCards.shuffle() }
-        return allCards
+        repeat (NUMBER_OF_COPIES_PER_CARD) { cards.shuffle() }
+        return cards
+    }
+
+    private fun getUniqueCodesForCards(numberOfUniqueCards: Int): Set<String> {
+        val codes = mutableSetOf<String>()
+        while (codes.size < numberOfUniqueCards) {
+            val code = ('A'..'Z').random() + Random.nextInt(0, 9).toString()
+            codes.add(code)
+        }
+        return codes
     }
 
     // Métodos para obter informações do tabuleiro envolvendo cartas
 
-    fun getCard(lineIndex: Int, columnIndex: Int): Card {
-        return this.cards[lineIndex][columnIndex]
-    }
-
-    fun hasFaceUpCards(): Boolean {
-        this.cards.forEach { it.forEach { if (it.isFaceUp) return true } }
+    fun hasFaceDownCards(): Boolean {
+        this.cards.forEach { it.forEach { if (!it.isFaceUp) return true } }
         return false
     }
 
-    fun hasFaceUpCards(lineIndex: Int): Boolean {
-        this.cards[lineIndex].forEach { if (it.isFaceUp) return true }
+    fun hasFaceDownCards(lineIndex: Int): Boolean {
+        this.cards[lineIndex].forEach { if (!it.isFaceUp) return true }
         return false
+    }
+
+    // Métodos para obter uma carta dentro do tabuleiro, junto com seus auxiliares (privados)
+
+    fun getCards(vararg cardsLabels: String): List<Card>? {
+        val cards = mutableListOf<Card>()
+        cardsLabels.forEach {
+            val card = getCard(it)
+            if (card == null) {
+                cards.forEach { it.isFaceUp = false }
+                return null
+            }
+            card.isFaceUp = true
+            cards.add(card)
+            println()
+        }
+        return cards
+    }
+
+    fun getCard(infoLabel: String): Card? {
+        println(infoLabel)
+        val lineIndex = getLineIndex()
+        if (lineIndex == null) {
+            return null
+        }
+        val card = getCardFromColumn(lineIndex)
+        if (card == null) {
+            return null
+        }
+        return card
+    }
+
+    private fun promptPosition(promptMessage: String): Int? {
+        var numberPosition = IO(promptMessage).get().trim().toIntOrNull()
+        return if (numberPosition == 0 && FIX_POSITION_0_TO_1) 1 else numberPosition
+    }
+
+    private fun getLineIndex(promptMessage: String = LINE_LABEL): Int? {
+        fun lineNumberValidator(lineNumber: Int) = (lineNumber in 1..this.cards.size)
+        fun lineIndexGetter(lineNumber: Int) = (lineNumber - 1)
+        fun lineIndexValidator(lineIndex: Any) = (hasFaceDownCards(lineIndex as Int))
+        return getPositionalElementIfValid(
+            promptMessage,
+            ::lineNumberValidator,
+            ::positionErrorMessage,
+            ::lineIndexGetter,
+            ::lineIndexValidator,
+            ::lineFullyFaceUpErrorMessage
+        ) as Int?
+    }
+
+    private fun getCardFromColumn(lineIndex: Int, promptMessage: String = COLUMN_LABEL): Card? {
+        val lineBoard = this.cards[lineIndex]
+        fun columnNumberValidator(columnNumber: Int) = (columnNumber in 1..lineBoard.size)
+        fun cardGetter(columnNumber: Int) = this.cards[lineIndex][columnNumber - 1]
+        fun cardValidator(card: Any) = ((card as Card).isFaceUp == false)
+        return getPositionalElementIfValid(
+            promptMessage,
+            ::columnNumberValidator,
+            ::positionErrorMessage,
+            ::cardGetter,
+            ::cardValidator,
+            ::faceUpErrorMessage
+        ) as Card?
+    }
+
+    private fun getPositionalElementIfValid(
+        promptMessage: String,
+        numberValidatorMethod: (number: Int) -> Boolean,
+        numberErrorMessageMethod: (tryNumber: Int) -> String,
+        elementGetterMethod: (positionNumber: Int) -> Any,
+        elementValidatorMethod: (element: Any) -> Boolean,
+        elementErrorMessageMethod: (tryNumber: Int) -> String
+    ): Any? {
+        for (tryNumber in 1..RETRIES_LIMIT_NUMBER) {
+            var positionNumber = promptPosition(promptMessage)
+            if (positionNumber == null || numberValidatorMethod(positionNumber) == false) {
+                showErrorMessage(numberErrorMessageMethod(tryNumber))
+                continue
+            }
+            val element = elementGetterMethod(positionNumber)
+            if (elementValidatorMethod(element) == false) {
+                showErrorMessage(elementErrorMessageMethod(tryNumber))
+                continue
+            }
+            return element
+        }
+        return null
     }
 
     // Métodos para obter mensagens de erro
 
     private fun faceUpErrorMessage() = "$FACEUP_ERROR_MESSAGE $FACEUP_RETRY_MESSAGE"
-    private fun fullyFaceUpErrorMessage() = "$LINE_FULLY_FACEUP_ERROR_MESSAGE $POSITION_RETRY_MESSAGE"
+    private fun lineFullyFaceUpErrorMessage() = "$LINE_FULLY_FACEUP_ERROR_MESSAGE $POSITION_RETRY_MESSAGE"
     private fun positionErrorMessage() = "$POSITION_ERROR_MESSAGE $POSITION_RETRY_MESSAGE"
 
     private fun faceUpErrorMessage(tryNumber: Int): String {
         return if (isLastTry(tryNumber)) FACEUP_ERROR_MESSAGE else this.faceUpErrorMessage()
     }
 
-    private fun fullyFaceUpErrorMessage(tryNumber: Int): String {
-        return if (isLastTry(tryNumber)) LINE_FULLY_FACEUP_ERROR_MESSAGE else this.fullyFaceUpErrorMessage()
+    private fun lineFullyFaceUpErrorMessage(tryNumber: Int): String {
+        return if (isLastTry(tryNumber)) LINE_FULLY_FACEUP_ERROR_MESSAGE else this.lineFullyFaceUpErrorMessage()
     }
 
     private fun positionErrorMessage(tryNumber: Int): String {
