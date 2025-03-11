@@ -1,3 +1,5 @@
+package br.mangarosa.memorygame
+
 import android.health.connect.datatypes.units.Length
 
 /**
@@ -201,5 +203,5 @@ fun configGame(): Pair<List<List<Card>>, Map<String, Player>> {
 }
 
 fun main() {
-configGame()
+    configGame()
 }
