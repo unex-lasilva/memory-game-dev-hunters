@@ -1,6 +1,7 @@
 package br.mangarosa.memorygame
 
 import android.health.connect.datatypes.units.Length
+import br.mangarosa.memorygame.Player
 
 /**
  * Esse módulo é responsável por prover a capacidade de configuração do jogo.
@@ -41,6 +42,21 @@ import android.health.connect.datatypes.units.Length
 
 fun repeatDiv(length: Int = 90){
     println("=".repeat(length))
+}
+
+/**
+ * recebe uma string no formato "NxN" (por exemplo, "4x4", "6x6", etc.)
+ * e retorna um Pair<Int, Int>, onde o primeiro valor é o número de linhas
+ * o segundo valor é o número de colunas.
+ * **/
+fun parseBoardSize(size: String): Pair<Int, Int> {
+    val parts = size.split("x")
+    if (parts.size != 2) {
+        throw IllegalArgumentException("Formato de tamanho do tabuleiro inválido. Use o formato 'NxN'.")
+    }
+    val lines = parts[0].toIntOrNull() ?: throw IllegalArgumentException("Número de linhas inválido.")
+    val columns = parts[1].toIntOrNull() ?: throw IllegalArgumentException("Número de colunas inválido.")
+    return Pair(lines, columns)
 }
 
 /**
@@ -103,7 +119,7 @@ fun jogadorCor(): String{
     return cor
 }
 
-fun configGame(): Pair<List<List<Card>>, Map<String, Player>> {
+fun configGame(): Pair<CardBoard, Map<String, Player>> {
     // Header da configuração
     println()
     repeatDiv()
@@ -189,13 +205,13 @@ fun configGame(): Pair<List<List<Card>>, Map<String, Player>> {
     }
 
     // Geração do tabuleiro
-    val (linhas, colunas) = getNumberOfLinesAndColumns(tamanhoFormatado)
-    val cardBoard = getCardsForGame(linhas, colunas)
+    val (linhas, colunas) = parseBoardSize(tamanhoFormatado)
+    val cardBoard = CardBoard(linhas, colunas)
 
     // Configuração dos jogadores
     val playersInfo = mapOf(
-        corPlayer1 to Player(nomePlayer1, 0),
-        corPlayer2 to Player(nomePlayer2, 0)
+        corPlayer1 to Player(corPlayer1, nomePlayer1),
+        corPlayer2 to Player(corPlayer2, nomePlayer2)
     )
 
     // Retorna o tabuleiro e o mapa de jogadores
@@ -203,5 +219,21 @@ fun configGame(): Pair<List<List<Card>>, Map<String, Player>> {
 }
 
 fun main() {
-    configGame()
+    println("Iniciando teste da função configGame...")
+    println()
+
+    // Chama a função configGame
+    val (cardBoard, playersInfo) = configGame()
+
+    // Exibe o tabuleiro gerado
+    println("\nTabuleiro gerado:")
+    println(cardBoard)
+
+    // Exibe os jogadores configurados
+    println("\nJogadores configurados:")
+    playersInfo.forEach { (color, player) ->
+        println("Cor: $color, Jogador: $player")
+    }
+
+    println("\nTeste concluído!")
 }

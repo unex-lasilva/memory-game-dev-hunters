@@ -60,7 +60,7 @@ fun main(){
                 //
                 val (cardBoard, players) = configGame()
                 playersInfo = players
-                runGame(cardBoard, players)
+                //runGame(cardBoard, players)
             }
             2 -> {
                 TODO("necessário implementação!")
