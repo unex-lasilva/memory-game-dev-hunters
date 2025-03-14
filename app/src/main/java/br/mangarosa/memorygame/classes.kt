@@ -22,7 +22,8 @@ class Player(val color: String, val nickname: String, score: Int = 0) {
         return if (newScore >= 0) newScore else 0
     }
 
-    fun scoreLabel() = "${this.score} ${if (this.score in 0..1) "ponto" else "pontos"}"
+    fun label() = "${this.nickname} - ${this.scoreLabel()}"
+    fun scoreLabel() = this.score.toString() + if (this.score in -1..1) " ponto" else " pontos"
 
     fun upScore(pointsEarned: Int) {
         this.score += pointsEarned
@@ -44,6 +45,7 @@ class Player(val color: String, val nickname: String, score: Int = 0) {
 
 class CardBoard(val lines: Int, val columns: Int) {
     val cards = mutableListOf<LineOfCards>()
+    lateinit var players: PlayersMap
 
     // Métodos para a configuração do tabuleiro
 
@@ -113,6 +115,15 @@ class CardBoard(val lines: Int, val columns: Int) {
         return false
     }
 
+    fun columnHasFaceDownCards(columnIndex: Int): Boolean {
+        for (lineIndex in this.cards.indices) {
+            if (!this.cards[lineIndex][columnIndex].isFaceUp) {
+                return true
+            }
+        }
+        return false
+    }
+
     // Métodos para obter uma carta dentro do tabuleiro, junto com seus auxiliares (privados)
 
     fun getCards(vararg cardsLabels: String): List<Card>? {
@@ -124,6 +135,8 @@ class CardBoard(val lines: Int, val columns: Int) {
                 return null
             }
             card.isFaceUp = true
+            println()
+            this.render()
             cards.add(card)
             println()
         }
@@ -200,6 +213,91 @@ class CardBoard(val lines: Int, val columns: Int) {
         }
         return null
     }
+
+    fun getMaxNumberOfColumns(): Int {
+        var maxNumberOfColumns = Int.MIN_VALUE
+        this.cards.forEach { if (it.size > maxNumberOfColumns) maxNumberOfColumns = it.size }
+        return maxNumberOfColumns
+    }
+
+    // Método para renderizar (desenhar) o CardBoard na tela
+    fun render(
+        horizontalSeparator: String = "=",
+        verticalSeparator: String = "|",
+        cardWidth: Int = 7,
+        cardHeight: Int = 4,
+        cardFaceDownColor: String = "white",
+        lineIndicatorWidth: Int = 3
+    ) {
+
+        val maxNumberOfColumns = getMaxNumberOfColumns()
+        val fullWidth = (maxNumberOfColumns * cardWidth) + (maxNumberOfColumns + 2) + lineIndicatorWidth
+        val columnSep = ComponentBuilder.Separator("-", fullWidth)
+        val lineSep = ComponentBuilder.Separator(horizontalSeparator, fullWidth).toString()
+
+        var cardBoardRender = " ".repeat(lineIndicatorWidth + 1) + verticalSeparator
+
+        fun renderHeader() {
+            val defaultWidth = DEFAULT_TERMINAL_WIDTH_SIZE
+            val scoreBoardWidth = if (fullWidth > defaultWidth) fullWidth else defaultWidth
+            val players = this.players.values.toTypedArray()
+            val scoreBoard = ComponentBuilder.ScoreBoard(*players, width = scoreBoardWidth)
+            println(scoreBoard)
+        }
+
+        fun getColumnsRender() {
+            for (columnNumber in 1..maxNumberOfColumns) {
+                val hasFaceDownCards = columnHasFaceDownCards(columnNumber - 1)
+                var columnIndicator = if (hasFaceDownCards) {
+                    columnNumber.toString().center(cardWidth).setBgColor("white").bold()
+                } else {
+                    " ".repeat(cardWidth)
+                }
+                cardBoardRender += columnIndicator + verticalSeparator
+            }
+            cardBoardRender += "\n" + columnSep + "\n"
+        }
+
+        renderHeader()
+        getColumnsRender()
+
+        val lineInMiddle = (if (cardHeight.isPair()) cardHeight.half() else cardHeight.half() + 1).toInt()
+
+        // código que renderiza o tabuleiro por completo
+
+        for (lineIndex in this.cards.indices) {
+            val lineOnBoard = this.cards[lineIndex]
+            val lineHasFaceDownCards = this.hasFaceDownCards(lineIndex)
+            for (lineInRenderNumber in 1..cardHeight) {
+                val lineInRenderIsInMiddle = lineInRenderNumber == lineInMiddle
+                var lineIndicator = if (lineInRenderIsInMiddle && lineHasFaceDownCards) {
+                    (lineIndex + 1).toString().center(lineIndicatorWidth).bold()
+                } else {
+                    " ".repeat(lineIndicatorWidth)
+                }
+                if (lineHasFaceDownCards) {
+                    lineIndicator = lineIndicator.setBgColor("white")
+                }
+
+                var line = "$verticalSeparator$lineIndicator$verticalSeparator"
+                for (card in lineOnBoard) {
+                    val color = if (card.isFaceUp) card.color else cardFaceDownColor
+                    val partialRender = when {
+                        !card.isFaceUp -> ComponentBuilder.Square(color, cardWidth).toString()
+                        lineInRenderIsInMiddle -> card.code.center(cardWidth).setBgColor(color).bold()
+                        else -> ComponentBuilder.Square(color, cardWidth).toString()
+                    }
+                    line += partialRender + verticalSeparator
+                }
+                cardBoardRender += line + "\n"
+            }
+            cardBoardRender += lineSep + "\n"
+        }
+
+        // renderização do cardboard completo
+        println(cardBoardRender)
+    }
+
 
     // Métodos para obter mensagens de erro
 
