@@ -3,16 +3,229 @@ package br.mangarosa.memorygame
 import kotlin.random.Random
 import kotlin.reflect.KClass
 
-class Card(val code: String, val color: String, var isFaceUp: Boolean = false) {
-    // TODO ("Método utilizado para testes. Remover antes da entrega final")
-    override fun toString(): String {
-        return "[${this.code}] Color: ${this.color}; Is face-up? ${this.isFaceUp}"
+const val GAME_NAME = "MANGA ROSA MEMORY GAME"
+const val NUMBER_OF_COPIES_PER_CARD = 2
+const val NUMBER_OF_BLACK_CARDS = 1
+
+const val RED_CARDS_AMOUNT_PCT = 0.25f
+const val BLUE_CARDS_AMOUNT_PCT = 0.25f
+const val RETRIES_LIMIT_NUMBER = 3
+const val FIX_POSITION_0_TO_1 = true
+
+const val BLACK_CARD_POINTS = 50
+const val OWN_CARD_POINTS = 5
+const val DEFAULT_LOST_POINTS = 2
+
+const val COLUMN_LABEL = "COLUNA: "
+const val LINE_LABEL = "LINHA: "
+const val PLAYER_LABEL = "PARTICIPANTE: "
+
+const val FACEUP_ERROR_MESSAGE = "A carta da posição informada já está virada."
+const val LINE_FULLY_FACEUP_ERROR_MESSAGE = "Todas as cartas desta linha já estão viradas."
+const val POSITION_ERROR_MESSAGE = "Posição da carta inválida."
+
+const val FACEUP_RETRY_MESSAGE = "Por favor, escolha outra posição!"
+const val POSITION_RETRY_MESSAGE = "Por favor, insira uma posição válida!"
+
+const val DEFAULT_TERMINAL_WIDTH_SIZE = 80
+const val DEFAULT_PADDING = " "
+const val DEFAULT_LABEL_PADDING_NUMBER = 2
+const val DEFAULT_WAIT_SEGS_POS_ACTION = 3
+
+val COLORS_AVAILABLE_TO_PLAY = listOf<String>("red", "blue")
+val SPECIAL_COLORS = listOf<String>("black", "yellow")
+
+val ASCII_COLORS = mapOf (
+    "black" to "\u001B[30m",
+    "red" to "\u001B[31m",
+    "green" to "\u001B[32m",
+    "yellow" to "\u001B[33m",
+    "blue" to "\u001B[34m",
+    "white" to "\u001B[37m",
+    "reset" to "\u001B[0m",
+)
+
+val ASCII_BG_COLORS = mapOf (
+    "red" to "\u001B[41m",
+    "blue" to "\u001B[44m",
+    "black" to "\u001B[40m",
+    "white" to "\u001B[47m",
+    "yellow" to "\u001B[43m",
+    "reset" to "\u001B[0m"
+)
+
+val ASCII_STYLES = mapOf (
+    "bold" to "\u001B[1m",
+    "underline" to "\u001B[4m",
+    "reset" to "\u001B[0m"
+)
+
+typealias CardsCollection = MutableList<Card>
+typealias ColorString = String
+typealias LineOfCards = List<Card>
+typealias PlayersMap = Map<ColorString, Player>
+
+fun cardLabel(cardNumber: Int) = "DIGITE A POSIÇÃO DA ${cardNumber}ª CARTA QUE DESEJA REVELAR: "
+fun pointsLabel(points: Int) = points.toString() + if (points in -1..1) " PONTO" else " PONTOS"
+fun timesLabel() = RETRIES_LIMIT_NUMBER.toString() + if (RETRIES_LIMIT_NUMBER in -1..1) " VEZ" else " VEZES"
+
+/* *************************************************************************************************
+*                                   SESSÃO DE FUNÇÕES DE EXTENSÃO
+*                   Novas capacidades foram dadas aos valores de tipo String e Int
+***************************************************************************************************/
+
+fun Int.isPair() = this % 2 == 0
+fun Int.half() = this / 2
+
+fun String.bold() = "${ASCII_STYLES["bold"]}$this${ASCII_STYLES["reset"]}"
+fun String.setColor(color: String) = "${ASCII_COLORS[color]}$this${ASCII_COLORS["reset"]}"
+fun String.setBgColor(color: String) = "${ASCII_BG_COLORS[color]}$this${ASCII_BG_COLORS["reset"]}"
+
+fun String.center(widthSize: Int = DEFAULT_TERMINAL_WIDTH_SIZE, paddingStr: String = " "): String {
+    val paddingNumber = (widthSize - this.length)
+    val paddingNumberForEachSide = (paddingNumber / 2).toInt()
+    val halfPadding = paddingStr.repeat(paddingNumberForEachSide)
+    var newString = halfPadding + this + halfPadding
+    newString += paddingStr.repeat(widthSize - newString.length)
+    return newString
+}
+
+/* *************************************************************************************************
+*                                   SESSÃO DE OBJETOS
+*  Os objetos aqui foram criados com o intuito de agrupar funções e recursos de categoria similar
+***************************************************************************************************/
+
+object ComponentBuilder {
+    const val DEFAULT_SQUARE_WIDTH = 4
+
+    class Square(val color: String, val length: Int = DEFAULT_SQUARE_WIDTH, val backgroundStr: String = DEFAULT_PADDING) {
+        override fun toString() = backgroundStr.repeat(length).setBgColor(color)
     }
-    // TODO ("Método utilizado para testes. Remover antes da entrega final")
-    fun toString(line: Int, column: Int): String {
-        return "[${line}/${column}] ${toString()}"
+
+    class PlayerInfo(val player: Player, val paddingStr: String = DEFAULT_PADDING) {
+        val padding = paddingStr.repeat(DEFAULT_LABEL_PADDING_NUMBER)
+        val length = DEFAULT_SQUARE_WIDTH + DEFAULT_LABEL_PADDING_NUMBER + player.label().length
+        val colorIndicator = Square(player.color)
+        override fun toString() = "${colorIndicator}$padding${player.label().bold()}"
+    }
+
+    class PlayersInfo(vararg players: Player, widthSize: Int = DEFAULT_TERMINAL_WIDTH_SIZE) {
+        val playersInfo = players.map { PlayerInfo(it) }
+        val paddingNumberBetweenPlayers = (widthSize - this.length()) / (playersInfo.size - 1)
+
+        override fun toString(): String {
+            var string = ""
+            val padding = if (paddingNumberBetweenPlayers >= 0) {
+                " ".repeat(paddingNumberBetweenPlayers)
+            } else {
+                "\n".repeat(2)
+            }
+            playersInfo.forEach { string += it.toString() + padding }
+            return string.trim()
+        }
+
+        fun length(): Int {
+            var length = 0
+            playersInfo.forEach { length += it.length }
+            return length
+        }
+    }
+
+    class Separator(val sepStr: String = "-", val widthSize: Int = DEFAULT_TERMINAL_WIDTH_SIZE) {
+        override fun toString() = sepStr.repeat(widthSize)
+    }
+
+    class Title(
+        val name: String = GAME_NAME,
+        val topSep: String = "=",
+        val downSep: String = "-",
+        val width: Int = DEFAULT_TERMINAL_WIDTH_SIZE
+    ) {
+        override fun toString(): String {
+            val sep1 = Separator(topSep, width).toString()
+            val sep2 = Separator(downSep, width).toString()
+            val titleName = name.center(width)
+            return sep1 + "\n" + titleName + "\n" + sep2
+        }
+    }
+
+    class ScoreBoard(
+        vararg players: Player,
+        val width: Int = DEFAULT_TERMINAL_WIDTH_SIZE,
+        val downSep: String="-"
+    ) {
+        val playersInfo = PlayersInfo(*players)
+        val title = Title(downSep = "", width = width)
+        override fun toString() = "$title\n${playersInfo}\n${Separator(this.downSep, width)}"
+    }
+
+}
+
+object ActionStatus {
+    val nothingHappensMessage = "ERROU! NADA ACONTECE... "
+
+    fun nextPlayerMessage(nextPlayer: Player) = "PASSOU A VEZ PARA \"${nextPlayer.nickname}\""
+    fun successMessage(points: String) = "ACERTOU! GANHOU ${points}. CONTINUE JOGANDO."
+    fun wrongMessage(points: Int) = "ERROU! PERDEU ${pointsLabel(points)}. "
+
+    fun showStatus(text: String, segsToWait: Int = DEFAULT_WAIT_SEGS_POS_ACTION) {
+        println(text.bold())
+        for (seg in 1..segsToWait) {
+            val segsLefting = segsToWait - seg
+            println("PROSSEGUINDO PARA A PRÓXIMA AÇÃO EM $segsLefting...")
+            Thread.sleep(1000)
+        }
+    }
+
+    fun printNothingHappens(nextPlayer: Player) {
+        val message = nothingHappensMessage + "\n" + nextPlayerMessage(nextPlayer)
+        showStatus(message)
+    }
+
+    fun printRetryExceeded(nextPlayer: Player) {
+        val topMessage = "POR TER TENTADO ${timesLabel()} SEM SUCESSO..."
+        val finalMessage = "PERDEU A VEZ PARA ${nextPlayer.nickname}!"
+        val message = topMessage + "\n" + finalMessage
+        showStatus(message.setColor("red"))
+    }
+
+    fun printSuccess(pointsEarned: Int) {
+        showStatus(successMessage(pointsLabel(pointsEarned)).setColor("green"), 2)
+    }
+
+    fun printWinner(players: List<Player>) {
+        val scores = players.map { it.score }
+        val higgestScore = scores.max()
+        val playersWithHiggestScore = players.filter { it.score == higgestScore }
+        if (playersWithHiggestScore.size > 1) {
+            var playersInTie = "EMPATE ENTRE: "
+            for (playerIndex in playersWithHiggestScore.indices) {
+                val player = playersWithHiggestScore[playerIndex]
+                playersInTie += when (playerIndex) {
+                    0 -> player.nickname
+                    playersWithHiggestScore.lastIndex -> " e ${player.nickname}."
+                    else -> ", ${player.nickname}"
+                }
+            }
+            showStatus(playersInTie.setColor("yellow"))
+        } else {
+            val winnerName = playersWithHiggestScore.first().nickname
+            showStatus("PARTICIPANTE \"$winnerName\" VENCEU O JOGO.".setColor("green"), 0)
+        }
+    }
+
+    fun printWrong(lostPoints: Int, nextPlayer: Player) {
+        val message = wrongMessage(lostPoints) + "\n" + nextPlayerMessage(nextPlayer)
+        showStatus(message.setColor("red"))
     }
 }
+
+/* *************************************************************************************************
+*                                   SESSÃO DE CLASSES
+*Elementos dentro do jogo representados por meio de entidades, com seus comportamentos implementados
+***************************************************************************************************/
+
+class Card(val code: String, val color: String, var isFaceUp: Boolean = false)
 
 class Player(val color: String, val nickname: String, score: Int = 0) {
     var score: Int = getValidScoreOrZero(score)
@@ -31,15 +244,6 @@ class Player(val color: String, val nickname: String, score: Int = 0) {
 
     fun downScore(lostPoints: Int) {
         this.score = getValidScoreOrZero(this.score - lostPoints)
-    }
-
-    // TODO ("Método utilizado para testes. Remover antes da entrega final")
-    override fun toString(): String {
-        return "[${this.color}] ${this.nickname}: ${this.score}"
-    }
-    // TODO ("Método utilizado para testes. Remover antes da entrega final")
-    fun toString(playerNumber: Int, totalPlayersNumber: Int): String {
-        return "[$playerNumber/$totalPlayersNumber] ${toString()}"
     }
 }
 
@@ -334,62 +538,6 @@ class CardBoard(val lines: Int, val columns: Int) {
     }
 }
 
-/**
- * Esta classe disponibiliza métodos para lidar com a entrada do usuário de forma aprimorada.
- * Os métodos desta classe utilizam por debaixo dos panos funções que provavelmente já foram usadas
- * por você, como "readln()" e "readLine()", que capturam a entrada do usuário. O que os métodos
- * desta classe fazem é adicionar uma camada de validação para garantir que o valor digitado pelo
- * usuário seja o que você realmente espera. Isso quer dizer que: enquanto o usuário não digitar um
- * valor válido, ele não poderá prosseguir, sendo obrigado a tentar novamente quantas vezes
- * for necessário.
- *
- * Existem 5 métodos aqui criados para você usar e para facilitar a sua vida.
- * Vou fazer um resumo de cada um deles, mas você pode ver mais informações acessando a
- * documentação de cada método dentro da sua própria IDE...
- * - get: mostra a mensagem na tela e retorna a string do que o usuário digitar.
- * - getAny: mesmo que o "get", mas OBRIGATORIAMENTE o usuário tem que informar algo.
- * - getFrom: mesmo que o "get", mas o usuário TEM QUE digitar um dos valores permitidos por você.
- * - getInt: mesmo que o "get", mas o que o usuário digitar é retornado como um valor Int
- *           (portanto, ele OBRIGATORIAMENTE tem que digitar um número inteiro válido.)
- * - getIntFrom: mesmo que o "getInt", mas o usuário TEM QUE digitar um dos números permitidos por
- *           você.
- *
- * (Tenha em mente que a mensagem mostrada na tela é definida por você ao criar uma instância IO)
- *
- * Exemplo de uso:
- * - val numero = IO("Insira um número de 1-3: ").getIntFrom(listOf(1, 2, 3))
- *   (obrigatoriamente será do tipo Int e o número guardado pode ser 1, 2, ou 3)
- *
- * - val stringQualquer = IO("Digite algo: ").get()
- *   (guarda uma String qualquer)
- *
- * - val stringQualquer = IO("Digite algo (não deixe em branco): ").getAny()
- *   (guarda uma String qualquer que não pode ficar em branco)
- *
- * @param [promptMessage]
- *    Mensagem que aparecerá na tela antes de capturar a entrada do usuário.
- *    Deve avisar o usuário sobre que tipo de informação é esperado que ele digite.
- *
- * @property [blankValueErrorMessage]
- *    Mensagem de erro padrão quando o valor recebido está em branco.
- *    Ex: uma string vazia ou contendo vários espaços em branco, mas somente espaços em branco.
- *
- * @property [incorrectNumberErrorMessage]
- *    Mensagem de erro padrão quando o valor recebido não puder ser representado como um número.
- *    (OBS: Esta classe foi implementada de forma a lidar somente com valores inteiros.
- *          Números de ponto flutuante também serão tratados como incorretos.)
- *
- * @property [valueNotAllowedErrorMessage]
- *    Mensagem de erro padrão quando o valor recebido não for um dos valores desejados.
- *
- * @property [retryingMessage]
- *    Mensagem padrão para indicar ao usuário que ele deve fazer uma nova tentativa.
- *    (OBS: Quando o usuário digita algo inválido, automaticamente os métodos desta classe
- *          unem esta mensagem com a mensagem de erro definida para exibir o erro por completo na
- *          tela.)
- *
- * @author Denilson Santos
- */
 class IO (val promptMessage: String) {
     private val blankValueErrorMessage = "Você precisa informar algo!"
     private val incorrectNumberErrorMessage = "Você precisa informar um número válido!"
@@ -626,4 +774,345 @@ class IO (val promptMessage: String) {
             )
         }
     }
+}
+
+
+/* *************************************************************************************************
+*                                   FUNÇÃO AUXILIARES
+*   Funções de reaproveitamento utilizadas por mais de uma parte do código
+***************************************************************************************************/
+
+fun repeatDiv(length: Int = DEFAULT_TERMINAL_WIDTH_SIZE){
+    println("=".repeat(length))
+}
+
+/* *************************************************************************************************
+*                                   FUNÇÃO DE CONFIGURAÇÃO DO JOGO
+*   Função responsável por receber as informações do jogador e configurar o tabuleiro de cartas.
+*   Ela entrega o jogo todo configurado para a função responsável por controlar o fluxo do jogo
+***************************************************************************************************/
+
+fun configGame(): Pair<CardBoard, Map<String, Player>> {
+
+
+
+    /**
+     * Função criada para a exibição de quadrado da cor vermelha
+     */
+    fun quadradoRed(size: Int = 2){
+        val red = "\u001B[41m" //vermelho
+        val reset = "\u001B[0m" // padrão
+
+        for (i in 1..size){
+            print(red + " ".repeat(size) + reset)
+        }
+    }
+
+    // Função criada para a exibição de quadrado da cor azul
+    fun quadradoBlue(size: Int = 2) {
+        val blue = "\u001B[44m" // Fundo azul
+        val reset = "\u001B[0m" // Reset de cor
+
+        for (i in 1..size) {
+            print(blue + " ".repeat(size) + reset)
+        }
+    }
+
+    // função para impedir que o usuário insira um apelido muito longo
+    fun limiteCaracter(mensagem: String, maxCaracter: Int = 16, player: Int): String {
+        var inputApelido: String
+        do {
+            inputApelido = IO(mensagem).get().takeIf { it.isNotBlank() } ?: if (player == 1) "PARTICIPANTE01" else "PARTICIPANTE02"
+            if (inputApelido.length > maxCaracter) {
+                println("O apelido não pode exceder $maxCaracter caracteres. Tente novamente.")
+            }
+        } while (inputApelido.length > maxCaracter)
+        return inputApelido
+    }
+
+    var ultimaCor: Int? = null
+    /**
+     * Função que atribui aleatoriamente uma cor para o usuário
+     * 1 - cor vermelha
+     * 2 - cor azul
+     * **/
+    fun jogadorCor(): String{
+        var corSorteada = (1..2).random()
+
+
+        while (corSorteada == ultimaCor){
+            corSorteada = (1..2).random()
+        }
+
+        val cor = when(corSorteada){
+            1 -> "red"
+            2 -> "blue"
+            else -> "red"
+        }
+
+        ultimaCor = corSorteada
+        return cor
+    }
+
+    /**
+     * recebe uma string no formato "NxN" (por exemplo, "4x4", "6x6", etc.)
+     * e retorna um Pair<Int, Int>, onde o primeiro valor é o número de linhas
+     * o segundo valor é o número de colunas.
+     * **/
+    fun parseBoardSize(size: String): Pair<Int, Int> {
+        val parts = size.split("x")
+        if (parts.size != 2) {
+            throw IllegalArgumentException("Formato de tamanho do tabuleiro inválido. Use o formato 'NxN'.")
+        }
+        val lines = parts[0].toIntOrNull() ?: throw IllegalArgumentException("Número de linhas inválido.")
+        val columns = parts[1].toIntOrNull() ?: throw IllegalArgumentException("Número de colunas inválido.")
+        return Pair(lines, columns)
+    }
+
+
+
+    // Header da configuração
+    println()
+    repeatDiv()
+    println("                                  CONFIGURAÇÕES DO JOGO                        ")
+    repeatDiv()
+
+    println()
+
+    // Configuração do tabuleiro
+    repeatDiv()
+    repeatDiv()
+    println("QUAL O TAMANHO DE TABULEIRO DESEJA JOGAR?")
+    repeatDiv()
+    println("    a. 4x4")
+    print("    ")
+    repeatDiv(86)
+    println("    b. 6x6")
+    print("    ")
+    repeatDiv(86)
+    println("    c. 8x8")
+    print("    ")
+    repeatDiv(86)
+    println("    d. 10x10")
+    print("    ")
+    repeatDiv(86)
+
+    // Leitura da opção do tabuleiro
+    val tamanhoTab = IO("DIGITE A OPÇÃO: ").getFrom(listOf("a", "b", "c", "d"))
+    val tamanhoFormatado = when (tamanhoTab) {
+        "a" -> "4x4"
+        "b" -> "6x6"
+        "c" -> "8x8"
+        "d" -> "10x10"
+        else -> "4x4"
+    }
+    repeatDiv()
+    println()
+
+    // Atribuição de apelidos
+    repeatDiv()
+    println("QUAL O APELIDO DA(O) PARTICIPANTE 1? ")
+    repeatDiv()
+
+    val nomePlayer1 = limiteCaracter("DIGITE O APELIDO: ", player = 1)
+    repeatDiv()
+
+    var nomePlayer2: String
+
+    do {
+        repeatDiv()
+        println("QUAL O APELIDO DA(O) PARTICIPANTE 2? ")
+        repeatDiv()
+        nomePlayer2 = limiteCaracter("DIGITE O APELIDO: ", player = 2)
+
+        if (nomePlayer2.equals(nomePlayer1, ignoreCase = true)) {
+            println("Os apelidos não podem ser iguais. Por favor, escolha outro apelido.")
+        }
+    } while (nomePlayer2.equals(nomePlayer1, ignoreCase = true))
+
+    repeatDiv()
+    println()
+
+    // Exibição das cores dos jogadores
+    repeatDiv()
+    println("                               $GAME_NAME                        ")
+    repeatDiv()
+
+    val corPlayer1 = jogadorCor()
+    print("${nomePlayer1} - ")
+    when (corPlayer1) {
+        "red" -> quadradoRed()
+        "blue" -> quadradoBlue()
+    }
+
+    println()
+    println()
+
+    val corPlayer2 = jogadorCor()
+    print("${nomePlayer2} - ")
+    when (corPlayer2) {
+        "red" -> quadradoRed()
+        "blue" -> quadradoBlue()
+    }
+
+    println()
+
+    // Geração do tabuleiro
+    val (linhas, colunas) = parseBoardSize(tamanhoFormatado)
+    val cardBoard = CardBoard(linhas, colunas)
+
+    // Configuração dos jogadores
+    val playersInfo = mapOf(
+        corPlayer1 to Player(corPlayer1, nomePlayer1),
+        corPlayer2 to Player(corPlayer2, nomePlayer2)
+    )
+
+    // Retorna o tabuleiro e o mapa de jogadores
+    return Pair(cardBoard, playersInfo)
+}
+
+/* *************************************************************************************************
+*                                   FUNÇÃO PARA INICIAR O JOGO
+*   Função responsável por controlar todo o fluxo do jogo. É ela que cuida da funcionadalide
+*   principal deste programa, jogar!
+***************************************************************************************************/
+
+fun runGame(cardBoard: CardBoard, playersInfo: PlayersMap) {
+
+    fun getCardsLabel(): Array<String> {
+        val cardsLabel = mutableListOf<String>()
+        for (numberOfCard in 1..NUMBER_OF_COPIES_PER_CARD) {
+            cardsLabel.add(cardLabel(numberOfCard))
+        }
+        return cardsLabel.toTypedArray()
+    }
+
+    fun findNextPlayerInMap(actualPlayerColor: String, playersInfo: PlayersMap): Player {
+        val playersColor = playersInfo.keys.toList()
+        val actualPlayerColorIndex = playersColor.indexOf(actualPlayerColor)
+        val actualPlayerIsLast = (actualPlayerColorIndex == playersColor.lastIndex)
+        val nextPlayerColorIndex = if (actualPlayerIsLast) 0 else actualPlayerColorIndex + 1
+        val nextPlayerColor = playersColor[nextPlayerColorIndex]
+        val nextPlayer = playersInfo[nextPlayerColor]
+        return nextPlayer as Player
+    }
+
+    fun containsEnemyCard(ownColor: ColorString, colorsFound: Set<ColorString>): Boolean {
+        colorsFound.forEach { if ( (it !in SPECIAL_COLORS) && (it != ownColor)) return true }
+        return false
+    }
+
+    fun evalSelection(playerColor: String, cards: List<Card>, playersInfo: PlayersMap): Boolean {
+        val player = playersInfo[playerColor] as Player
+        val codesFound = mutableSetOf<String>()
+        val colorsFound = mutableSetOf<ColorString>()
+
+        cards.forEach { codesFound.add(it.code); colorsFound.add(it.color) }
+
+        val gotCardsWithSameColor = colorsFound.size == 1
+        val gotCardsWithsSameCode = codesFound.size == 1
+        val gotAllCopiesOfCard = (gotCardsWithsSameCode) && (gotCardsWithSameColor)
+        val gotOwnColor = colorsFound.first() == playerColor
+        val gotBlackCard = "black" in colorsFound
+        val gotEnemyCard = containsEnemyCard(playerColor, colorsFound)
+        if (gotAllCopiesOfCard) {
+            val pointsEarned = when {
+                gotBlackCard -> BLACK_CARD_POINTS
+                gotOwnColor -> OWN_CARD_POINTS
+                else -> 1
+            }
+            player.upScore(pointsEarned)
+            ActionStatus.printSuccess(pointsEarned)
+            return true
+        } else {
+            val nextPlayer = findNextPlayerInMap(playerColor, playersInfo)
+            val lostPoints = when {
+                gotBlackCard -> BLACK_CARD_POINTS
+                gotEnemyCard -> DEFAULT_LOST_POINTS
+                else -> 0
+            }
+            if (lostPoints == 0) {
+                ActionStatus.printNothingHappens(nextPlayer)
+            } else {
+                ActionStatus.printWrong(lostPoints, nextPlayer)
+            }
+            player.downScore(lostPoints)
+            cards.forEach { it.isFaceUp = false }
+            return false
+        }
+        readln()
+    }
+
+    cardBoard.players = playersInfo
+    while (cardBoard.hasFaceDownCards()) {
+        for ((color, player) in playersInfo.entries) {
+            var playerMustContinue: Boolean = false
+            do {
+                cardBoard.render()
+                val playerLabel = "$PLAYER_LABEL${player.nickname}"
+                println(playerLabel)
+                val selectedCards = cardBoard.getCards(*getCardsLabel())
+                if (selectedCards == null) {
+                    ActionStatus.printRetryExceeded(findNextPlayerInMap(color, playersInfo))
+                    continue
+                }
+                playerMustContinue = evalSelection(color, selectedCards, playersInfo)
+                println()
+            } while (playerMustContinue && cardBoard.hasFaceDownCards())
+            if (!cardBoard.hasFaceDownCards()) {
+                break
+            }
+        }
+    }
+    ActionStatus.printWinner(playersInfo.values.toList())
+}
+
+
+fun main(){
+    // Váriavel para armazenar informações dos jogadores
+    var playersInfo: Map<String, Player>? = null
+
+    // Menu em looping Infinito, até ser encerrado em alguma condição.
+    while (true){
+        // Header da aplicação
+        repeatDiv()
+        println("                                  Manga Rosa Memory Game          ")
+        repeatDiv()
+
+        // Opções do menu
+        println("1. INICIAR")
+        println("2. PONTUAÇÃO PARTICIPANTES")
+        println("3. REGRAS DO JOGO")
+        println("4. SAIR")
+        repeatDiv()
+
+        /**
+         * Criação de váriavel que armazena valor da opção desejada pelo usuário.
+         * Utilização da classe IO para tratamento de valores.
+         * **/
+        val opcaoEscolhida = IO("INFORME SUA OPÇÃO: ").getIntFrom(listOf(1, 2, 3, 4))
+
+        when(opcaoEscolhida){
+            1 -> {
+                //
+                val (cardBoard, players) = configGame()
+                playersInfo = players
+                runGame(cardBoard, players)
+            }
+            2 -> {
+                TODO("necessário implementação!")
+
+            }
+            3 -> {
+                TODO("necessário implementação")
+                //showRules()
+            }
+            4 -> {
+                println("ATÉ MAIS!")
+                return
+            }
+        }
+
+    }
+
 }
