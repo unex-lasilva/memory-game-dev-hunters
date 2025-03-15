@@ -786,6 +786,25 @@ fun repeatDiv(length: Int = DEFAULT_TERMINAL_WIDTH_SIZE){
     println("=".repeat(length))
 }
 
+fun quadradoRed(size: Int = 2){
+    val red = "\u001B[41m" //vermelho
+    val reset = "\u001B[0m" // padrão
+
+    for (i in 1..size){
+        print(red + " ".repeat(size) + reset)
+    }
+}
+
+// Função criada para a exibição de quadrado da cor azul
+fun quadradoBlue(size: Int = 2) {
+    val blue = "\u001B[44m" // Fundo azul
+    val reset = "\u001B[0m" // Reset de cor
+
+    for (i in 1..size) {
+        print(blue + " ".repeat(size) + reset)
+    }
+}
+
 /* *************************************************************************************************
 *                                   FUNÇÃO DE CONFIGURAÇÃO DO JOGO
 *   Função responsável por receber as informações do jogador e configurar o tabuleiro de cartas.
@@ -1067,6 +1086,31 @@ fun runGame(cardBoard: CardBoard, playersInfo: PlayersMap) {
     ActionStatus.printWinner(playersInfo.values.toList())
 }
 
+fun showRanking(playersInfo: Map<String, Player>) {
+    // Verifica se há jogadores para exibir
+    if (playersInfo.isEmpty()) {
+        println("Nenhum jogador cadastrado.")
+        return
+    }
+
+    // Converte o mapa de jogadores em uma lista ordenada por pontuação (do maior para o menor)
+    val ranking = playersInfo.values.sortedByDescending { it.score }
+
+    // Exibe o ranking
+    repeatDiv()
+    println("RANKING DOS JOGADORES".center())
+    repeatDiv()
+    ranking.forEachIndexed { index, player ->
+        // Exibe a posição, o nome do jogador e o quadrado colorido
+        print("${index + 1}º Lugar: ${player.nickname} - ")
+        when (player.color) {
+            "red" ->  quadradoRed()
+                "blue" -> quadradoBlue()
+            else -> print("██") // Quadrado padrão (caso a cor não seja reconhecida)
+        }
+        println(" ${player.score} pontos")
+    }
+}
 
 fun main(){
     // Váriavel para armazenar informações dos jogadores
@@ -1100,8 +1144,11 @@ fun main(){
                 runGame(cardBoard, players)
             }
             2 -> {
-                TODO("necessário implementação!")
-
+                if (playersInfo != null) {
+                    showRanking(playersInfo)
+                } else {
+                    println("Nenhum jogo foi iniciado ainda. Por favor, inicie um jogo primeiro.")
+                }
             }
             3 -> {
                 TODO("necessário implementação")
