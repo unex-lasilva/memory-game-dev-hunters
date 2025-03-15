@@ -785,13 +785,7 @@ class IO (val promptMessage: String) {
 fun repeatDiv(length: Int = DEFAULT_TERMINAL_WIDTH_SIZE){
     println("=".repeat(length))
 }
-fun showRules() {
-    repeatDiv()
-    println("                             $GAME_NAME      ")
-    repeatDiv()
-    println(   "REGRAS DO JOGO "  )
 
-<<<<<<< HEAD
 fun quadradoRed(size: Int = 2){
     val red = "\u001B[41m" //vermelho
     val reset = "\u001B[0m" // padrão
@@ -811,7 +805,16 @@ fun quadradoBlue(size: Int = 2) {
     }
 }
 
-=======
+/* *************************************************************************************************
+*                                   FUNÇÃO PARA EXIBIR REGRAS DO JOGO
+***************************************************************************************************/
+
+fun showRules() {
+    repeatDiv()
+    println("                             $GAME_NAME      ")
+    repeatDiv()
+    println(   "REGRAS DO JOGO "  )
+
     println("1. Cada participante deve ter atribuído a si uma cor (vermelho ou azul) no início do\n" +
             "jogo.")
     println("2. Todo participante deve ter um nome registrado. Senão, o nome padrão\n" +
@@ -831,7 +834,38 @@ fun quadradoBlue(size: Int = 2) {
             "participante. Mas se acertar, ganha o jogo.")
 
 }
->>>>>>> dc05d19289b4fd1c7405a5eeb111de771bc32920
+
+
+/* *************************************************************************************************
+*                                   FUNÇÃO PARA EXIBIR O SCORE DO JOGO
+***************************************************************************************************/
+
+fun showRanking(playersInfo: Map<String, Player>?) {
+    // Verifica se há jogadores para exibir
+    if (playersInfo == null || playersInfo.isEmpty()) {
+        println("Nenhum jogador cadastrado.")
+        return
+    }
+
+    // Converte o mapa de jogadores em uma lista ordenada por pontuação (do maior para o menor)
+    val ranking = playersInfo.values.sortedByDescending { it.score }
+
+    // Exibe o ranking
+    repeatDiv()
+    println("RANKING DOS JOGADORES".center())
+    repeatDiv()
+    ranking.forEachIndexed { index, player ->
+        // Exibe a posição, o nome do jogador e o quadrado colorido
+        print("${index + 1}º Lugar: ${player.nickname} - ")
+        when (player.color) {
+            "red" ->  quadradoRed()
+            "blue" -> quadradoBlue()
+            else -> print("██") // Quadrado padrão (caso a cor não seja reconhecida)
+        }
+        println(" ${player.score} pontos")
+    }
+}
+
 /* *************************************************************************************************
 *                                   FUNÇÃO DE CONFIGURAÇÃO DO JOGO
 *   Função responsável por receber as informações do jogador e configurar o tabuleiro de cartas.
@@ -840,29 +874,10 @@ fun quadradoBlue(size: Int = 2) {
 
 fun configGame(): Pair<CardBoard, Map<String, Player>> {
 
-
-
     /**
      * Função criada para a exibição de quadrado da cor vermelha
      */
-    fun quadradoRed(size: Int = 2){
-        val red = "\u001B[41m" //vermelho
-        val reset = "\u001B[0m" // padrão
 
-        for (i in 1..size){
-            print(red + " ".repeat(size) + reset)
-        }
-    }
-
-    // Função criada para a exibição de quadrado da cor azul
-    fun quadradoBlue(size: Int = 2) {
-        val blue = "\u001B[44m" // Fundo azul
-        val reset = "\u001B[0m" // Reset de cor
-
-        for (i in 1..size) {
-            print(blue + " ".repeat(size) + reset)
-        }
-    }
 
     // função para impedir que o usuário insira um apelido muito longo
     fun limiteCaracter(mensagem: String, maxCaracter: Int = 16, player: Int): String {
@@ -1113,31 +1128,6 @@ fun runGame(cardBoard: CardBoard, playersInfo: PlayersMap) {
     ActionStatus.printWinner(playersInfo.values.toList())
 }
 
-fun showRanking(playersInfo: Map<String, Player>) {
-    // Verifica se há jogadores para exibir
-    if (playersInfo.isEmpty()) {
-        println("Nenhum jogador cadastrado.")
-        return
-    }
-
-    // Converte o mapa de jogadores em uma lista ordenada por pontuação (do maior para o menor)
-    val ranking = playersInfo.values.sortedByDescending { it.score }
-
-    // Exibe o ranking
-    repeatDiv()
-    println("RANKING DOS JOGADORES".center())
-    repeatDiv()
-    ranking.forEachIndexed { index, player ->
-        // Exibe a posição, o nome do jogador e o quadrado colorido
-        print("${index + 1}º Lugar: ${player.nickname} - ")
-        when (player.color) {
-            "red" ->  quadradoRed()
-                "blue" -> quadradoBlue()
-            else -> print("██") // Quadrado padrão (caso a cor não seja reconhecida)
-        }
-        println(" ${player.score} pontos")
-    }
-}
 
 fun main(){
     // Váriavel para armazenar informações dos jogadores
@@ -1171,11 +1161,7 @@ fun main(){
                 runGame(cardBoard, players)
             }
             2 -> {
-                if (playersInfo != null) {
-                    showRanking(playersInfo)
-                } else {
-                    println("Nenhum jogo foi iniciado ainda. Por favor, inicie um jogo primeiro.")
-                }
+                showRanking(playersInfo)
             }
             3 -> {
                 showRules()
