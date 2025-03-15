@@ -785,7 +785,13 @@ class IO (val promptMessage: String) {
 fun repeatDiv(length: Int = DEFAULT_TERMINAL_WIDTH_SIZE){
     println("=".repeat(length))
 }
+fun showRules() {
+    repeatDiv()
+    println("                             $GAME_NAME      ")
+    repeatDiv()
+    println(   "REGRAS DO JOGO "  )
 
+<<<<<<< HEAD
 fun quadradoRed(size: Int = 2){
     val red = "\u001B[41m" //vermelho
     val reset = "\u001B[0m" // padrão
@@ -805,6 +811,27 @@ fun quadradoBlue(size: Int = 2) {
     }
 }
 
+=======
+    println("1. Cada participante deve ter atribuído a si uma cor (vermelho ou azul) no início do\n" +
+            "jogo.")
+    println("2. Todo participante deve ter um nome registrado. Senão, o nome padrão\n" +
+            "“PARTICIPANTE01” e “PARTICIPANTE02” devem ser atribuídos a cada um das(os)\n" +
+            "participantes.")
+    println("3. Cada participante possui uma pontuação atrelada a si.")
+    println("4. Se a(o) participante encontrar um par de cartas com fundo amarelo, fatura 1\n" +
+            "ponto.")
+    println("5. Se a(o) participante encontrar um par de cartas com o fundo da sua cor, fatura 5\n" +
+            "pontos.")
+    println("6. Se a(o) participante encontrar um par de cartas com o fundo da cor de seu\n" +
+            "adversário e errar, perde 2 pontos. Porém, se acertar, ganha apenas 1 ponto.")
+    println("7. RA(o) participante não pode ter pontuação negativa. Se ela(ele) perder mais\n" +
+            "pontos do que possui, ficará com a pontuação zerada")
+    println("8. Se a(o) participante encontrar uma carta com o fundo preto e errar o seu par,\n" +
+            "perde o jogo, mesmo que tenha a pontuação superior à da(o) outra(o)\n" +
+            "participante. Mas se acertar, ganha o jogo.")
+
+}
+>>>>>>> dc05d19289b4fd1c7405a5eeb111de771bc32920
 /* *************************************************************************************************
 *                                   FUNÇÃO DE CONFIGURAÇÃO DO JOGO
 *   Função responsável por receber as informações do jogador e configurar o tabuleiro de cartas.
@@ -1151,8 +1178,7 @@ fun main(){
                 }
             }
             3 -> {
-                TODO("necessário implementação")
-                //showRules()
+                showRules()
             }
             4 -> {
                 println("ATÉ MAIS!")
