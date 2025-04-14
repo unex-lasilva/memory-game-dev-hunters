@@ -47,6 +47,13 @@ import br.mangarosa.memorygame.R
 import kotlin.math.max
 
 /**
+ * @author Luan Vinicius
+ *
+ * Descrição: Implementação da GameActivity com lógica de cartas e pontuação.
+ * Data: 13/04/2025 as 22:00
+ */
+
+/**
  * Classe que controla todo o estado do jogo, desde as cartas até a pontuação
  *
  * @param boardSize Tamanho do tabuleiro (4x4, 6x6, etc)
