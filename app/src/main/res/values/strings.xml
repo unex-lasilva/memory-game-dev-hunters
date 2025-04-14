@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Memory Game</string>
+    <string name="title_activity_splash_screen">SplashScreenActivity</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_scores">ScoresActivity</string>
+    <string name="title_activity_rules">RulesActivity</string>
+    <string name="title_activity_config_table">ConfigTableActivity</string>
+    <string name="title_activity_config_players">ConfigPlayersActivity</string>
+    <string name="title_activity_game">GameActivity</string>
+    <string name="title_activity_main2">MainActivity2</string>
+    <string name="title_activity_2">Activity2</string>
 </resources>
