@@ -3,50 +3,115 @@ package br.mangarosa.memorygame.activities
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import br.mangarosa.memorygame.activities.components.GameLogo
-import br.mangarosa.memorygame.activities.components.ScreenBackground
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import br.mangarosa.memorygame.R
 import br.mangarosa.memorygame.activities.ui.theme.MemoryGameTheme
 
 class ScoresActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             MemoryGameTheme {
-                Surface (modifier = Modifier.fillMaxSize()) {
-                    Test()
-
-                }
+                ScoresScreen(onVoltar = { finish() })
             }
         }
     }
 }
 
 @Composable
-fun Test() {
-
+fun ScoresScreen(onVoltar: () -> Unit = {}) {
     Box(modifier = Modifier.fillMaxSize()) {
-        ScreenBackground()
 
-        Box() {
-            GameLogo()
-            Box(contentAlignment = Alignment.BottomCenter) {}
+        // Fundo
+        Image(
+            painter = painterResource(id = R.drawable.background),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
 
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+
+            // Logo
+            Image(
+                painter = painterResource(id = R.drawable.logo),
+                contentDescription = "Logo",
+                modifier = Modifier
+                    .width(220.dp)
+                    .height(120.dp)
+                    .padding(bottom = 32.dp)
+            )
+
+            // Título
+            androidx.compose.material3.Text(
+                text = "Pontuação Final",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            // Pontuações
+            androidx.compose.material3.Text(
+                text = "Jogador 1: 12 pontos",
+                fontSize = 20.sp,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            androidx.compose.material3.Text(
+                text = "Jogador 2: 9 pontos",
+                fontSize = 20.sp,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+
+            // Botão Voltar com clique
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .clickable { onVoltar() }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.button), // Corrigido aqui
+                    contentDescription = "Botão Voltar",
+                    modifier = Modifier
+                        .width(220.dp)
+                        .height(60.dp)
+                )
+                androidx.compose.material3.Text(
+                    text = "Voltar",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
         }
-
-
-
     }
+}
 
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun TelaPontuacaoPreview() {
+    MemoryGameTheme {
+        ScoresScreen()
+    }
 }
