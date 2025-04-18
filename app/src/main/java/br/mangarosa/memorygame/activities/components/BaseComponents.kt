@@ -7,40 +7,60 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import br.mangarosa.memorygame.R
 
-@Composable
-fun BlueCircledSquare(modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(id = R.drawable.blue_square),
-        contentDescription = "Um quadrado azul arredondado",
-        modifier = modifier
-    )
+object CircledSquare {
+
+    @Composable
+    fun Blue(modifier: Modifier = Modifier) {
+        Image(
+            painter = painterResource(id = R.drawable.blue_square),
+            contentDescription = "Um quadrado azul arredondado",
+            modifier = modifier
+        )
+    }
+
+    @Composable
+    fun Red(modifier: Modifier = Modifier) {
+        Image(
+            painter = painterResource(id = R.drawable.red_square),
+            contentDescription = "Um quadrado vermelho arredondado",
+            modifier = modifier
+        )
+    }
+
 }
 
-@Composable
-fun GreenNext(modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(id = R.drawable.green_next),
-        contentDescription = "Um ícone verde indicando próxima ação",
-        modifier = modifier
-    )
+object Close {
+
+    @Composable
+    fun Red(modifier: Modifier = Modifier) {
+        Image(
+            painter = painterResource(id = R.drawable.red_x_button),
+            contentDescription = "Um ícone vermelho com um X no meio indicando saída da operação atual",
+            modifier = modifier
+        )
+    }
+
 }
 
-@Composable
-fun Home(modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(id = R.drawable.blue_home),
-        contentDescription = "Um ícone para voltar à tela inicial",
-        modifier = modifier
-    )
-}
+object FieldBase {
 
-@Composable
-fun RedBack(modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(id = R.drawable.red_back),
-        contentDescription = "Um ícone vermelho indicando retrocedência",
-        modifier = modifier
-    )
+    @Composable
+    fun Green(modifier: Modifier = Modifier) {
+        Image(
+            painter = painterResource(id = R.drawable.green_field),
+            contentDescription = "Uma base de cor verde com borda branca para compor um campo de texto",
+            modifier = modifier
+        )
+    }
+
+    @Composable
+    fun Red(modifier: Modifier = Modifier) {
+        Image(
+            painter = painterResource(id = R.drawable.red_field),
+            contentDescription = "Uma base de cor vermelha com borda branca para compor um campo de texto",
+            modifier = modifier
+        )
+    }
 }
 
 @Composable
