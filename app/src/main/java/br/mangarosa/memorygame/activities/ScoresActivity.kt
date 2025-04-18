@@ -6,6 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +22,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.mangarosa.memorygame.R
+import br.mangarosa.memorygame.activities.components.GameLogo
+import br.mangarosa.memorygame.activities.components.ScreenBackground
 import br.mangarosa.memorygame.activities.ui.theme.MemoryGameTheme
 
 class ScoresActivity : ComponentActivity() {
@@ -49,6 +56,8 @@ fun ScoresScreen(onVoltar: () -> Unit = {}) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+                Surface (modifier = Modifier.fillMaxSize()) {
+                    Test()
 
             // Logo
             Image(
@@ -107,11 +116,4 @@ fun ScoresScreen(onVoltar: () -> Unit = {}) {
         }
     }
 }
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun TelaPontuacaoPreview() {
-    MemoryGameTheme {
-        ScoresScreen()
-    }
 }
