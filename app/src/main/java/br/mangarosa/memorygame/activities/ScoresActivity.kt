@@ -57,7 +57,6 @@ fun ScoresScreen(onVoltar: () -> Unit = {}) {
             verticalArrangement = Arrangement.Center
         ) {
                 Surface (modifier = Modifier.fillMaxSize()) {
-                    Test()
 
             // Logo
             Image(
