@@ -70,49 +70,25 @@ class GameState(
     private val player1Color: Color,
     private val player2Color: Color
 ) {
-    // Jogador atual (1 ou 2)
-    var currentPlayer by mutableStateOf(1)
-
-    // Pontuação de cada jogador
-    var player1Score by mutableStateOf(0)
-    var player2Score by mutableStateOf(0)
-
-    // Índices das cartas viradas no momento
-    val flippedIndices = mutableListOf<Int>()
-
-    // Índices das cartas que já foram combinadas
+    var currentPlayer by mutableIntStateOf(1)
+    var player1Score by mutableIntStateOf(0)
+    var player2Score by mutableIntStateOf(0)
+    private val flippedIndices = mutableListOf<Int>()
     val matchedIndices = mutableSetOf<Int>()
-
-    // Lista de todas as cartas do jogo
     val cards = mutableStateListOf<Card>().apply {
         addAll(generateCards(boardSize))
     }
-
-    // Flag que indica se o jogo acabou
     var gameOver by mutableStateOf(false)
-
-    // Nome do vencedor (null se ainda não acabou)
     var winner by mutableStateOf<String?>(null)
 
-    /**
-     * Gera as cartas do jogo com a distribuição correta de cores
-     *
-     * @param size Tamanho do tabuleiro
-     * @return Lista de cartas embaralhadas
-     */
     private fun generateCards(size: Int): List<Card> {
         val totalPairs = (size * size) / 2
         val colors = mutableListOf<Color>().apply {
-            // Sempre tem um par de cartas pretas
             add(Color.Black); add(Color.Black)
-
-            // Distribui as cores dos jogadores (metade pra cada)
             repeat((totalPairs - 1) / 2) {
                 add(player1Color); add(player1Color)
                 add(player2Color); add(player2Color)
             }
-
-            // O restante fica com cartas amarelas
             repeat(totalPairs - 1 - ((totalPairs - 1) / 2 * 2)) {
                 add(Color.Yellow); add(Color.Yellow)
             }
@@ -120,24 +96,13 @@ class GameState(
         return colors.shuffled().mapIndexed { index, color -> Card(index, color) }
     }
 
-    /**
-     * Vira uma carta no tabuleiro
-     *
-     * @param index Índice da carta a ser virada
-     * @return true se a carta foi virada com sucesso, false se não pode virar
-     */
     fun flipCard(index: Int): Boolean {
-        // Não deixa virar se o jogo acabou, ou se a carta não existe, ou se já foi combinada
         if (gameOver || index !in cards.indices || cards[index].isMatched) return false
-
-        // Só pode ter no máximo 2 cartas viradas por vez
         if (flippedIndices.size >= 2 || index in flippedIndices) return false
 
-        // Vira a carta e guarda o índice
         cards[index] = cards[index].copy(isFlipped = true)
         flippedIndices.add(index)
 
-        // Se virou duas cartas, verifica se formam par
         if (flippedIndices.size == 2) {
             checkMatch()
             checkGameEnd()
@@ -145,9 +110,6 @@ class GameState(
         return true
     }
 
-    /**
-     * Verifica se as duas cartas viradas formam um par
-     */
     private fun checkMatch() {
         val (first, second) = flippedIndices
         val card1 = cards[first]
@@ -155,25 +117,21 @@ class GameState(
         val isMatch = card1.color == card2.color
 
         if (isMatch) {
-            // Marca as cartas como combinadas
             cards[first] = card1.copy(isMatched = true)
             cards[second] = card2.copy(isMatched = true)
             matchedIndices.addAll(listOf(first, second))
             updateScore(card1.color, true)
         } else {
-            // Se não formou par, atualiza a pontuação e depois desvira as cartas
             updateScore(card1.color, false)
             Handler(Looper.getMainLooper()).postDelayed({
                 cards[first] = card1.copy(isFlipped = false)
                 cards[second] = card2.copy(isFlipped = false)
                 flippedIndices.clear()
-                // Passa a vez pro outro jogador
                 currentPlayer = if (currentPlayer == 1) 2 else 1
             }, 1000)
             return
         }
 
-        // Limpa as cartas viradas e desvira todas exceto as combinadas
         flippedIndices.clear()
         cards.forEachIndexed { index, card ->
             if (!card.isMatched) {
@@ -182,79 +140,36 @@ class GameState(
         }
     }
 
-    /**
-     * Verifica se todas as cartas foram combinadas (fim do jogo)
-     */
-    fun checkGameEnd() {
+    private fun checkGameEnd() {
         if (cards.all { it.isMatched }) {
             gameOver = true
-            // Define o vencedor baseado na pontuação
-            winner = if (player1Score > player2Score) player1Name
-            else if (player2Score > player1Score) player2Name
-            else "Empate"
+            winner = when {
+                player1Score > player2Score -> player1Name
+                player2Score > player1Score -> player2Name
+                else -> "Empate"
+            }
         }
     }
 
-    /**
-     * Atualiza a pontuação baseada nas regras do jogo
-     *
-     * @param color Cor da carta que foi virada
-     * @param isMatch Indica se formou um par
-     */
     private fun updateScore(color: Color, isMatch: Boolean) {
         val flippedColors = flippedIndices.map { cards[it].color }
+        val currentScore = if (currentPlayer == 1) ::player1Score else ::player2Score
 
         when {
-            // Acertou um par preto: +7 pontos
-            color == Color.Black && isMatch -> {
-                if (currentPlayer == 1) player1Score += 7
-                else player2Score += 7
-            }
-
-            // Virou preto com outra cor: -3 pontos
-            flippedColors.contains(Color.Black) && flippedColors.any { it != Color.Black } -> {
-                if (currentPlayer == 1) player1Score = max(0, player1Score - 3)
-                else player2Score = max(0, player2Score - 3)
-            }
-
-            // Virou amarelo com outra cor: -1 ponto
-            flippedColors.contains(Color.Yellow) && flippedColors.any { it != Color.Yellow } -> {
-                if (currentPlayer == 1) player1Score = max(0, player1Score - 1)
-                else player2Score = max(0, player2Score - 1)
-            }
-
-            // Virou cor do jogador 1 e 2 juntas: -2 pontos
-            (flippedColors.contains(player1Color) && flippedColors.contains(player2Color)) -> {
-                if (currentPlayer == 1) player1Score = max(0, player1Score - 2)
-                else player2Score = max(0, player2Score - 2)
-            }
-
-            // Pontuações normais por pares corretos
-            color == Color.Yellow && isMatch -> {
-                if (currentPlayer == 1) player1Score += 1
-                else player2Score += 1
-            }
-            // Jogador 1 acertou par VERMELHO (sua cor)
-            (color == player1Color && currentPlayer == 1 && isMatch) -> {
-                player1Score += 5
-            }
-            // Jogador 2 acertou par AZUL (sua cor)
-            (color == player2Color && currentPlayer == 2 && isMatch) -> {
-                player2Score += 5
-            }
-            // Jogador 1 acertou par AZUL (cor oposta)
-            (color == player2Color && currentPlayer == 1 && isMatch) -> {
-                player1Score += 1
-            }
-            // Jogador 2 acertou par VERMELHO (cor oposta)
-            (color == player1Color && currentPlayer == 2 && isMatch) -> {
-                player2Score += 1
-            }
+            color == Color.Black && isMatch -> currentScore.set(currentScore.get() + 50)
+            flippedColors.contains(Color.Black) && flippedColors.any { it != Color.Black } ->
+                currentScore.set(max(0, currentScore.get() - 50))
+            flippedColors.contains(Color.Yellow) && flippedColors.any { it != Color.Yellow } ->
+                currentScore.set(max(0, currentScore.get() - 1))
+            flippedColors.contains(player1Color) && flippedColors.contains(player2Color) ->
+                currentScore.set(max(0, currentScore.get() - 2))
+            color == Color.Yellow && isMatch -> currentScore.set(currentScore.get() + 1)
+            color == player1Color && currentPlayer == 1 && isMatch -> currentScore.set(currentScore.get() + 5)
+            color == player2Color && currentPlayer == 2 && isMatch -> currentScore.set(currentScore.get() + 5)
+            color == player2Color && currentPlayer == 1 && isMatch -> currentScore.set(currentScore.get() + 1)
+            color == player1Color && currentPlayer == 2 && isMatch -> currentScore.set(currentScore.get() + 1)
         }
     }
-
-    // Verifica se o jogo acabou
-    fun isGameOver() = gameOver
 }
 
 /**
@@ -342,12 +257,11 @@ class GameActivity : ComponentActivity() {
         player1Name: String = "Jogador 1",
         player2Name: String = "Jogador 2",
         boardSize: Int = 4,
-        player1Color: Color = Color.Red,  // Adicione tipo Color
-        player2Color: Color = Color.Blue, // Adicione tipo Color
+        player1Color: Color = Color.Red,
+        player2Color: Color = Color.Blue,
         onBackClick: () -> Unit = {},
         onGameFinished: () -> Unit = {}
     ) {
-        // Estado do jogo que controla toda a lógica
         var gameState by remember {
             mutableStateOf(
                 GameState(
@@ -360,26 +274,20 @@ class GameActivity : ComponentActivity() {
             )
         }
 
-        // Controla se mostra o diálogo de fim de jogo
         var showGameOverDialog by remember { mutableStateOf(false) }
 
-        // Fica observando se o jogo acabou
         LaunchedEffect(gameState.gameOver) {
-            if (gameState.gameOver) {
-                showGameOverDialog = true
-            }
+            if (gameState.gameOver) showGameOverDialog = true
         }
 
-        // Layout principal da tela
         Box(modifier = Modifier.fillMaxSize()) {
-            // Imagem de fundo
             Image(
                 painter = painterResource(id = R.drawable.wallpaper),
                 contentDescription = "Background",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            // Logo como marca d'água
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -390,19 +298,17 @@ class GameActivity : ComponentActivity() {
                     painter = painterResource(id = R.drawable.logo),
                     contentDescription = "Logo marca d'água",
                     modifier = Modifier
-                        .size(360.dp)
-                        .offset(y = (110.dp))
-                        .alpha(0.45f),
+                        .size(400.dp)
+                        .offset(y = 90.dp)
+                        .alpha(0.6f),
                     contentScale = ContentScale.Fit
                 )
             }
 
-            // Coluna com os elementos principais
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Cabeçalho com placar
                 GameHeader(
                     player1Name = gameState.player1Name,
                     player2Name = gameState.player2Name,
@@ -411,21 +317,20 @@ class GameActivity : ComponentActivity() {
                     currentPlayer = gameState.currentPlayer
                 )
 
-                // Área do tabuleiro
                 Box(
                     modifier = Modifier
                         .weight(1f, fill = false)
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 26.dp)
+                        .offset(y = (-20).dp)
+                        .widthIn(max = 600.dp)
+                        .padding(horizontal = 12.dp, vertical = 67.dp)
                 ) {
-                    // Container do tabuleiro
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(Color.Gray.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
                             .padding(1.dp)
                     ) {
-                        // Tabuleiro responsivo
                         ResponsiveGameBoard(
                             gameState = gameState,
                             showMatch = false,
@@ -434,71 +339,80 @@ class GameActivity : ComponentActivity() {
                         )
                     }
                 }
-
-                // Área da logo
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                )
             }
 
-            // Botão de voltar
-            Button(
-                onClick = onBackClick,
+            Box(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
+                    .fillMaxSize()
                     .padding(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF60B7D1))
+                contentAlignment = Alignment.BottomStart
             ) {
-                Text("Voltar", fontSize = 14.sp)
+                Button(
+                    onClick = onBackClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF60B7D1))
+                ) {
+                    Text("Voltar", fontSize = 14.sp)
+                }
             }
         }
 
-        // Diálogo de fim de jogo
         if (showGameOverDialog) {
-            AlertDialog(
-                onDismissRequest = { showGameOverDialog = false },
-                title = {
-                    Text(
-                        text = "Jogo Finalizado!",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+            GameOverDialog(
+                winner = gameState.winner,
+                onPlayAgain = {
+                    showGameOverDialog = false
+                    gameState = GameState(boardSize, player1Name, player2Name, player1Color, player2Color)
                 },
-                text = {
-                    Text(
-                        text = "O vencedor é: ${gameState.winner}",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showGameOverDialog = false
-                            gameState = GameState(boardSize, player1Name, player2Name, player2Color, player1Color)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF60B7D1))
-                    ) {
-                        Text("Jogar Novamente")
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = {
-                            showGameOverDialog = false
-                            onGameFinished()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
-                    ) {
-                        Text("Sair")
-                    }
-                },
-                modifier = Modifier.padding(16.dp),
-                shape = RoundedCornerShape(12.dp)
+                onExit = {
+                    showGameOverDialog = false
+                    onGameFinished()
+                }
             )
         }
     }
+
+    @Composable
+    private fun GameOverDialog(
+        winner: String?,
+        onPlayAgain: () -> Unit,
+        onExit: () -> Unit
+    ) {
+        AlertDialog(
+            onDismissRequest = onExit,
+            title = {
+                Text(
+                    text = "Jogo Finalizado!",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "O vencedor é: ${winner ?: "Empate"}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = onPlayAgain,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF60B7D1))
+                ) {
+                    Text("Jogar Novamente")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = onExit,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                ) {
+                    Text("Sair")
+                }
+            },
+            modifier = Modifier.padding(16.dp),
+            shape = RoundedCornerShape(12.dp)
+        )
+    }
+
 
     /**
      * Componente que renderiza o tabuleiro do jogo de forma responsiva
@@ -521,7 +435,7 @@ class GameActivity : ComponentActivity() {
         // Usa BoxWithConstraints para pegar as dimensões disponíveis
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             // Espaçamento padrão entre as cartas
-            val cardSpacing = 8.dp
+            val cardSpacing = 1.dp
 
             // Calcula o espaçamento total necessário
             val totalHorizontalSpacing = cardSpacing * (cols - 1)
@@ -539,12 +453,12 @@ class GameActivity : ComponentActivity() {
             // Layout em coluna que centraliza verticalmente o tabuleiro
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 4.dp), // Pequeno padding nas laterais
+                    .fillMaxSize(),
                 verticalArrangement = Arrangement.Center
             ) {
                 // Loop para criar as linhas do tabuleiro
                 repeat(rows) { row ->
+
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -556,7 +470,6 @@ class GameActivity : ComponentActivity() {
                                 modifier = Modifier
                                     .width(cardWidth)
                                     .height(cardHeight)
-                                    .padding(cardSpacing / 2) // Metade do espaçamento como padding
                             ) {
                                 // Componente de carta individual
                                 CardView(
@@ -637,10 +550,11 @@ class GameActivity : ComponentActivity() {
             modifier = Modifier
                 .width(cardWidth)
                 .height(cardHeight)
+                .padding(8.dp)
                 .shadow(
                     elevation = elevation,
                     shape = RoundedCornerShape(cornerRadius),
-                    clip = true
+                    clip = true,
                 )
                 .graphicsLayer {
                     rotationY = rotation // Aplica rotação 3D
@@ -755,47 +669,44 @@ class GameActivity : ComponentActivity() {
         player2Name: String,
         player1Score: Int,
         player2Score: Int,
-        currentPlayer: Int
+        currentPlayer: Int,
+        modifier: Modifier = Modifier
     ) {
-        // Container principal do cabeçalho
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
-            color = Color(0xFF60B7D1), // Cor azul clara
+                .padding(8.dp)
+                .offset(y = 15.dp), // Reduzi o padding
+            color = Color(0xFF60B7D1),
             shape = RoundedCornerShape(7.dp),
-            shadowElevation = 8.dp // Sombra para efeito 3D
+            shadowElevation = 8.dp
         ) {
-            // Layout em linha para organizar os jogadores
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 18.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp), // Reduzi o padding
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Coluna do jogador 1
                 PlayerInfo(
                     name = player1Name,
                     score = player1Score,
-                    backgroundColor = Color(0xFFb83c2e), // Vermelho
+                    backgroundColor = Color(0xFFb83c2e),
                     isCurrentPlayer = currentPlayer == 1
                 )
 
-                // Separador central
                 Text(
                     text = "X",
-                    fontSize = 60.sp,
+                    fontSize = 50.sp, // Reduzi um pouco o tamanho
                     fontWeight = FontWeight.Black,
                     color = Color.White,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
 
-                // Coluna do jogador 2
                 PlayerInfo(
                     name = player2Name,
                     score = player2Score,
-                    backgroundColor = Color(0xFF0d56a3), // Azul
+                    backgroundColor = Color(0xFF0d56a3),
                     isCurrentPlayer = currentPlayer == 2
                 )
             }
