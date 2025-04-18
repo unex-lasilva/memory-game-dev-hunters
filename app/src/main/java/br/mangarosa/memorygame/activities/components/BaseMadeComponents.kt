@@ -1,23 +1,31 @@
 package br.mangarosa.memorygame.activities.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-
-const val DEFAULT_LOGO_SIZE = 340
+import br.mangarosa.memorygame.activities.MainActivity
+import br.mangarosa.memorygame.activities.utils.navigate
 
 @Composable
-fun GameLogo(modifier: Modifier = Modifier, logoSize: Int = DEFAULT_LOGO_SIZE) {
-    MainLogo(modifier = modifier.size(logoSize.dp))
+fun CloseIcon(iconSize: Int = 75) {
+    val context = LocalContext.current
+    Close.Red(modifier = Modifier
+        .size(iconSize.dp)
+        .clickable { navigate(context, MainActivity::class.java) }
+    )
 }
 
 @Composable
-fun HomeIcon() {
-    Home(modifier = Modifier.fillMaxWidth(0.5f))
+fun GameLogo() {
+    MainLogo(modifier = Modifier
+        .fillMaxWidth(0.9f)
+        .fillMaxSize(0.3f)
+    )
 }
 
 @Composable

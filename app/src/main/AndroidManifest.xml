@@ -13,6 +13,11 @@
         android:theme="@style/Theme.MemoryGame"
         tools:targetApi="31">
         <activity
+            android:name=".activities.ConfigGameActivity"
+            android:exported="false"
+            android:label="@string/title_activity_config_game"
+            android:theme="@style/Theme.MemoryGame" />
+        <activity
             android:name=".activities.GameActivity"
             android:exported="false"
             android:theme="@style/Theme.MemoryGame" />
@@ -42,6 +47,7 @@
             android:theme="@style/Theme.MemoryGame">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

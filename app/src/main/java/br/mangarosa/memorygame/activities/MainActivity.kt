@@ -30,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.mangarosa.memorygame.R
-import br.mangarosa.memorygame.activities.components.MainLogo
+import br.mangarosa.memorygame.activities.components.GameLogo
 import br.mangarosa.memorygame.activities.components.ScreenBackground
 import br.mangarosa.memorygame.activities.ui.theme.MemoryGameTheme
 import br.mangarosa.memorygame.activities.utils.navigate
@@ -67,52 +67,48 @@ private fun MainContent() {
 }
 
 @Composable
-private fun GameLogo() {
-    MainLogo(modifier = Modifier
-        .fillMaxWidth(0.9f)
-        .fillMaxSize(0.3f)
-    )
-}
-
-@Composable
 private fun Options() {
     val context = LocalContext.current
     val activity = context as Activity
     fun goTo(destiny: Class<*>) = navigate(context, destiny)
     fun closeApp() = activity.finishAffinity()
     Column {
-        Option("Iniciar", { goTo(ConfigTableActivity::class.java) })
+        Option("Iniciar", { goTo(ConfigGameActivity::class.java) })
         Option("Pontuações", { goTo(ScoresActivity::class.java) })
         Option("Regras", { goTo(RulesActivity::class.java) })
         Option("Sair", { closeApp() })
     }
 }
 
-@Composable
-private fun Option(optionLabel: String, actionOnClick: () -> Unit = {}) {
-    val modifiers = Modifier.padding(10.dp).clickable { actionOnClick() }
-    Box(contentAlignment = Alignment.Center, modifier = modifiers) {
-        OptionBase()
-        OptionLabel(optionLabel)
+private object Option {
+
+    @Composable
+    operator fun invoke(optionLabel: String, actionOnClick: () -> Unit = {}) {
+        val modifiers = Modifier.padding(10.dp).clickable { actionOnClick() }
+        Box(contentAlignment = Alignment.Center, modifier = modifiers) {
+            Base()
+            Label(optionLabel)
+        }
     }
-}
 
-@Composable
-private fun OptionLabel(optionLabel: String) {
-    Text(
-        text = optionLabel,
-        color = Color.White,
-        fontSize = 36.sp,
-        fontWeight = FontWeight.Medium,
-        style = TextStyle(shadow = Shadow(color = Color.Black, offset = Offset(6f, 6f), blurRadius = 12f))
-    )
-}
+    @Composable
+    private fun Label(optionLabel: String) {
+        Text(
+            text = optionLabel,
+            color = Color.White,
+            fontSize = 36.sp,
+            fontWeight = FontWeight.Medium,
+            style = TextStyle(shadow = Shadow(color = Color.Black, offset = Offset(6f, 6f), blurRadius = 12f))
+        )
+    }
 
-@Composable
-private fun OptionBase() {
-    Image(
-        painter = painterResource(id = R.drawable.main_option),
-        contentDescription = "Base com textura de madeira para exibir a opção",
-        modifier = Modifier.fillMaxWidth(0.9f).height(95.dp)
-    )
+    @Composable
+    private fun Base() {
+        Image(
+            painter = painterResource(id = R.drawable.main_option),
+            contentDescription = "Base com textura de madeira para exibir a opção",
+            modifier = Modifier.fillMaxWidth(0.9f).height(95.dp)
+        )
+    }
+
 }
