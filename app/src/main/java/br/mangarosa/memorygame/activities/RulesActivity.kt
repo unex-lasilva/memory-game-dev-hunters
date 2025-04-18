@@ -48,8 +48,7 @@ class RulesActivity : ComponentActivity() {
         setContent {
             MemoryGameTheme {
                 Surface (modifier = Modifier.fillMaxSize()) {
-
-
+                    TelaDeRegras()
                 }
             }
         }

@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.sp
 import br.mangarosa.memorygame.classes.CardBoard
 import br.mangarosa.memorygame.classes.Player
 import br.mangarosa.memorygame.R
-import br.mangarosa.memorygame.activities.components.CloseIcon
+import br.mangarosa.memorygame.activities.components.Close
 import br.mangarosa.memorygame.activities.components.FieldBase
 import br.mangarosa.memorygame.activities.components.GameLogo
 import br.mangarosa.memorygame.activities.components.ScreenBackground
@@ -81,7 +81,8 @@ class ConfigGameActivity : ComponentActivity() {
 @Composable
 private fun CloseIconAllignedAtEnd() {
     Column (horizontalAlignment = Alignment.End, modifier = Modifier.fillMaxWidth()) {
-        CloseIcon()
+        val context = LocalContext.current
+        Close.Red(modifier = Modifier.clickable { navigate(context, MainActivity::class.java) })
     }
 }
 
