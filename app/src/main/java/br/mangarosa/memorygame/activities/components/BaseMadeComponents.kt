@@ -12,15 +12,6 @@ import br.mangarosa.memorygame.activities.MainActivity
 import br.mangarosa.memorygame.activities.utils.navigate
 
 @Composable
-fun CloseIcon(iconSize: Int = 75) {
-    val context = LocalContext.current
-    Close.Red(modifier = Modifier
-        .size(iconSize.dp)
-        .clickable { navigate(context, MainActivity::class.java) }
-    )
-}
-
-@Composable
 fun GameLogo() {
     MainLogo(modifier = Modifier
         .fillMaxWidth(0.9f)
