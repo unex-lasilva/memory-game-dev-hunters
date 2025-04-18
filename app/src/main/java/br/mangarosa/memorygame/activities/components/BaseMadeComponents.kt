@@ -11,8 +11,11 @@ import androidx.compose.ui.unit.dp
 const val DEFAULT_LOGO_SIZE = 340
 
 @Composable
-fun GameLogo(modifier: Modifier = Modifier, logoSize: Int = DEFAULT_LOGO_SIZE) {
-    MainLogo(modifier = modifier.size(logoSize.dp))
+fun GameLogo() {
+    MainLogo(modifier = Modifier
+        .fillMaxWidth(0.9f)
+        .fillMaxSize(0.3f)
+    )
 }
 
 @Composable
